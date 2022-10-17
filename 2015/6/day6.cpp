@@ -1,3 +1,5 @@
+/* Number of failed Attempts: 1 */
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -47,12 +49,12 @@ int main() {
     std::ifstream input("input.txt");
     
     //initialize the light grid
-    bool** light_grid = new bool*[1000];
+    int** light_grid = new int*[1000];
     for(int i = 0; i < 1000; i++) {
-        light_grid[i] = new bool[1000];
+        light_grid[i] = new int[1000];
 
         for(int j = 0; j < 1000; j++)
-            light_grid[i][j] = false;
+            light_grid[i][j] = 0;
     }
 
     std::string instruction;
@@ -65,24 +67,24 @@ int main() {
         if(instruction.substr(0, 8) == "turn off") {
             coordinates = getCoordinates(9, instruction);
 
-            for(int i = coordinates["x1"]; i < coordinates["x2"]; i++)
-                for(int j = coordinates["y1"]; j < coordinates["y2"]; j++)
-                    light_grid[i][j] = false;
+            for(int i = coordinates["x1"]; i <= coordinates["x2"]; i++)
+                for(int j = coordinates["y1"]; j <= coordinates["y2"]; j++)
+                    if(light_grid[i][j] > 0) light_grid[i][j]--;
             
         } else if(instruction.substr(0, 7) == "turn on") {
             coordinates = getCoordinates(8, instruction);
 
-            for(int i = coordinates["x1"]; i < coordinates["x2"]; i++)
-                for(int j = coordinates["y1"]; j < coordinates["y2"]; j++)
-                    light_grid[i][j] = true;
+            for(int i = coordinates["x1"]; i <= coordinates["x2"]; i++)
+                for(int j = coordinates["y1"]; j <= coordinates["y2"]; j++)
+                    light_grid[i][j]++;
 
         } else if(instruction.substr(0,6) == "toggle") {
             coordinates = getCoordinates(7, instruction);
 
-            for(int i = coordinates["x1"]; i < coordinates["x2"]; i++)
-                for(int j = coordinates["y1"]; j < coordinates["y2"]; j++)
-                    light_grid[i][j] = !light_grid[i][j];
-                    
+            for(int i = coordinates["x1"]; i <= coordinates["x2"]; i++)
+                for(int j = coordinates["y1"]; j <= coordinates["y2"]; j++)
+                    light_grid[i][j] += 2;
+
         } else {
             std::cout << "unknown instruction '" << instruction << "'.  Exiting..." << std::endl;
             return 0;
@@ -90,13 +92,17 @@ int main() {
     }
 
     //check how many lights are lit
-    int num_lights_lit = 0;
+    int brightness = 0;
     for(int i = 0; i < 1000; i++)
         for(int j = 0; j < 1000; j++)
-            if(light_grid[i][j])
-                num_lights_lit++;
+            brightness += light_grid[i][j];
     
-    std::cout << "Number of lights lit: " << num_lights_lit << std::endl;
+    std::cout << "Number of lights lit: " << brightness << std::endl;
+
+    //deallocate memory
+    for(int i = 0; i < 1000; i++)
+        delete[] light_grid[i];
+    delete[] light_grid;
 
     return 1;
 }
