@@ -1,4 +1,4 @@
-use std::{collections::HashMap, usize};
+use std::collections::HashMap;
 
 const FILE_PATH : &str = "data/input.txt";
 
@@ -49,73 +49,47 @@ fn attach_wire(wires : &mut HashMap<String, u16>, lines : &Vec<String>, ignore_i
 			return Some(index);
 		}
 
-		if line.contains("AND")
+		match line_parts.as_slice()
 		{
-			let signal_one : Option<u16> = get_signal(line_parts[0], &wires);
-			let signal_two : Option<u16> = get_signal(line_parts[2], &wires);
-
-			if signal_one.is_some() && signal_two.is_some()
+			["NOT", input_identifier, _, output_identifier] =>
 			{
-				wires.insert(String::from(*line_parts.last().unwrap()), signal_one.unwrap() & signal_two.unwrap());
-				return Some(index);
+				if let Some(signal_one) = get_signal(&input_identifier, &wires)
+				{
+					wires.insert(output_identifier.to_string(), !signal_one);
+					return Some(index);
+				}
 			}
-		}
-		else if line.contains("OR")
-		{
-			let signal_one : Option<u16> = get_signal(line_parts[0], &wires);
-			let signal_two : Option<u16> = get_signal(line_parts[2], &wires);
 
-			if signal_one.is_some() && signal_two.is_some()
+			// Pattern for [input operation input arrow output]
+			[input_identifier_left, operation, input_identifier_right, _, output_identifier] =>
 			{
-				wires.insert(String::from(*line_parts.last().unwrap()), signal_one.unwrap() | signal_two.unwrap());
-				return Some(index);
-			}
-		}
-		else if line.contains("LSHIFT")
-		{
-			let signal_one : Option<u16> = get_signal(line_parts[0], &wires);
-			let signal_two : Option<u16> = get_signal(line_parts[2], &wires);
+				if let (Some(input_left), Some(input_right)) = (get_signal(&input_identifier_left, &wires), get_signal(&input_identifier_right, &wires))
+				{
+					let result = match *operation
+					{
+						"AND"	=> input_left & input_right,
+						"OR"	=> input_left | input_right,
+						"LSHIFT"=> input_left << input_right,
+						"RSHIFT"=> input_left >> input_right,
+						_		=> unreachable!(),
+					};
 
-			if signal_one.is_some() && signal_two.is_some()
-			{
-				wires.insert(String::from(*line_parts.last().unwrap()), signal_one.unwrap() << signal_two.unwrap());
-				return Some(index);
+					wires.insert(output_identifier.to_string(), result);
+					return Some(index);
+				}
 			}
-		}
-		else if line.contains("RSHIFT")
-		{
-			let signal_one : Option<u16> = get_signal(line_parts[0], &wires);
-			let signal_two : Option<u16> = get_signal(line_parts[2], &wires);
 
-			if signal_one.is_some() && signal_two.is_some()
+			// Direct input
+			[input_identifier, _, output_identifier] =>
 			{
-				wires.insert(String::from(*line_parts.last().unwrap()), signal_one.unwrap() >> signal_two.unwrap());
-				return Some(index);
+				if let Some(input_signal) = get_signal(&input_identifier, &wires)
+				{
+					wires.insert(output_identifier.to_string(), input_signal);
+					return Some(index);
+				}
 			}
-		}
-		else if line.contains("NOT")
-		{
-			let signal_one : Option<u16> = get_signal(line_parts[1], &wires);
 
-			if signal_one.is_some()
-			{
-				wires.insert(String::from(*line_parts.last().unwrap()), !signal_one.unwrap());
-				return Some(index);
-			}
-		}
-		else if line_parts.len() == 3
-		{
-			let signal_one : Option<u16> = get_signal(line_parts[0], &wires);
-
-			if signal_one.is_some()
-			{
-				wires.insert(String::from(*line_parts.last().unwrap()), signal_one.unwrap());
-				return Some(index);
-			}
-		}
-		else
-		{
-			panic!("Did not recognize line {}", line);
+			_ => panic!("Unable to recognize line {}", line),
 		}
 	}
 
@@ -125,9 +99,7 @@ fn attach_wire(wires : &mut HashMap<String, u16>, lines : &Vec<String>, ignore_i
 // Returns the signal value in a u16 Option
 fn get_signal(signal : &str, wires : &HashMap<String, u16>) -> Option<u16>
 {
-	if wires.contains_key(signal) { return Some(wires[signal]); }
-	
-	return signal.parse::<u16>().ok();
+	return wires.get(signal).copied().or_else(|| signal.parse().ok());
 }
 
 fn read_input(lines : &mut Vec<String>)
@@ -135,10 +107,5 @@ fn read_input(lines : &mut Vec<String>)
 	let file_content : String = std::fs::read_to_string(FILE_PATH)
 		.expect("Unable to read file...");
 
-	for line in file_content.lines()
-	{
-		if line.is_empty() { continue; }
-
-		lines.push(String::from(line));
-	}
+	lines.extend(file_content.lines().filter(|line| !line.is_empty()).map(String::from));
 }
