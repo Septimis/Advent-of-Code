@@ -2,6 +2,8 @@ use std::{collections::HashMap, usize};
 
 const FILE_PATH : &str = "data/input.txt";
 
+// ATTEMPT 1 PART 2 (too low): 33706
+
 fn main()
 {
 	// Maps an identifier to its signal
@@ -14,20 +16,38 @@ fn main()
 
 	while !lines.is_empty()
 	{
-		lines.swap_remove(attach_wire(&mut wires, &lines)
+		lines.swap_remove(attach_wire(&mut wires, &lines, false)
 			.expect("Expected a valid line. Got None...")
 		);
 	}
 
-	println!("The value at 'a' is '{}'", wires["a"]);
+	let temp : u16 = wires["a"];
+	wires.clear();
+	wires.insert(String::from("b"), temp);
+
+	read_input(&mut lines);
+
+	while !lines.is_empty()
+	{
+		lines.swap_remove(attach_wire(&mut wires, &lines, true)
+			.expect("Expected a valid line. Got None...")
+		);
+	}
+
+	println!("Wire 'a': '{}'", wires["a"]);
 }
 
 // Provides the index of the line successfully processed into the wires HashMap
-fn attach_wire(wires : &mut HashMap<String, u16>, lines : &Vec<String>) -> Option<usize>
+fn attach_wire(wires : &mut HashMap<String, u16>, lines : &Vec<String>, ignore_input_to_b : bool) -> Option<usize>
 {
 	for (index, line) in lines.iter().enumerate()
 	{
 		let line_parts : Vec<&str> = line.split_ascii_whitespace().collect();
+
+		if ignore_input_to_b && *line_parts.last().unwrap() == "b"
+		{
+			return Some(index);
+		}
 
 		if line.contains("AND")
 		{
