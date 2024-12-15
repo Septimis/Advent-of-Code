@@ -7,12 +7,76 @@ fn main()
 		.expect("Unable to process data into lists...");
 
 	let mut distance_sum : usize = 0;
+	let mut similarity_score : usize = 0;
 	for (left_value, right_value) in left_list.iter().zip(right_list.iter())
 	{
 		distance_sum += left_value.abs_diff(*right_value);
 	}
 
+	for value in left_list
+	{
+		similarity_score += value * instances_found(value, &right_list);
+	}
+
 	println!("Total distance: {distance_sum}");
+	println!("Similarity Score: {similarity_score}");
+}
+
+fn instances_found(value : usize, list : &Vec<usize>) -> usize
+{
+	let instance_index : Option<usize> = binary_search(list, 0, list.len() - 1, value);
+
+	return match instance_index
+	{
+		None => 0,
+		Some(index) =>
+		{
+			let mut instances : usize = 1;
+
+			let mut forward_index : usize = index + 1;
+			let mut backward_index : usize = index - 1;
+
+			while list[forward_index] == value && forward_index < list.len()
+			{
+				instances += 1;
+				forward_index += 1;
+			}
+
+			while list[backward_index] == value
+			{
+				instances += 1;
+
+				if backward_index == 0 { break; }
+				
+				backward_index -= 1;
+			}
+
+			instances
+		}
+	};
+}
+
+// returns the index of the found value in the array
+fn binary_search(list : &Vec<usize>, low : usize, high : usize, value : usize) -> Option<usize>
+{
+	if low > high
+	{
+		return None;
+	}
+
+	let mid : usize = low + (high - low) / 2;
+
+	if value == list[mid]
+	{
+		return Some(mid);
+	}
+
+	if value < list[mid]
+	{
+		return binary_search(list, low, mid - 1, value);
+	}
+
+	return binary_search(list, mid + 1, high, value);
 }
 
 fn read_input() -> Option<(Vec<usize>, Vec<usize>)>
