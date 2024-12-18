@@ -23,7 +23,8 @@ fn main()
 			.try_into()
 			.expect("Unable to parse report into vector of usize's...");
 
-		num_safe_reports += if check_safety(levels, 1) { 1 } else { 0 }
+		num_safe_reports += 
+		if check_safety(levels, 1) { 1 } else { 0 };
 	}
 
 	println!("Safe Reports: {num_safe_reports}");
@@ -47,7 +48,6 @@ fn check_safety(mut levels : Vec<usize>, problem_dampener_charges : usize) -> bo
 				return check_safety(levels, problem_dampener_charges - 1);
 			}
 
-			println!("{:?} FAIL", levels);
 			return false;
 		}
 	};
@@ -73,13 +73,11 @@ fn check_safety(mut levels : Vec<usize>, problem_dampener_charges : usize) -> bo
 				}
 			}
 
-			println!("{:?} FAIL", levels);
 			return false;
 		}
 
 		last = level;
 	}
 
-	println!("{:?} PASS", levels);
 	return true;
 }
