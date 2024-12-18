@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::{BufReader, BufRead};
 
+// 544 & 548 & 559 too low
+
 fn main()
 {
 	let input_file : File = File::open("input.txt")
@@ -8,7 +10,6 @@ fn main()
 	let reader : BufReader<File> = BufReader::new(input_file);
 	
 	let mut num_safe_reports : usize = 0;
-
 	for report in reader.lines()
 	{
 		let report : String = report.expect("Unable to read line in input...");
@@ -22,7 +23,7 @@ fn main()
 			.try_into()
 			.expect("Unable to parse report into vector of usize's...");
 
-		num_safe_reports += if check_safety(levels) { 1 } else { 0 }
+		num_safe_reports += if check_safety(levels, 1) { 1 } else { 0 }
 	}
 
 	println!("Safe Reports: {num_safe_reports}");
@@ -30,7 +31,7 @@ fn main()
 
 // The levels are either all increasing or all decreasing.
 // Any two adjacent levels differ by at least one and at most three.
-fn check_safety(levels : Vec<usize>) -> bool
+fn check_safety(mut levels : Vec<usize>, problem_dampener_charges : usize) -> bool
 {
 	if levels.len() < 2 { return true; }
 
@@ -38,23 +39,42 @@ fn check_safety(levels : Vec<usize>) -> bool
 	{
 		[first, second, ..] if first < second => true,
 		[first, second, ..] if first > second => false,
-		_ => return false
+		_ =>
+		{
+			if problem_dampener_charges > 0
+			{
+				levels.remove(0);
+				return check_safety(levels, problem_dampener_charges - 1);
+			}
+
+			return false;
+		}
 	};
 
 	let mut last : usize = levels[0];
-	for level in levels.iter().skip(1)
+	for (index, &level) in levels.iter().enumerate().skip(1)
 	{
-		if is_ascending && (*level <= last || level.abs_diff(last) > 3)
+		let is_unsafe : bool =
+			(is_ascending && level <= last) ||
+			(!is_ascending && level >= last) ||
+			level.abs_diff(last) > 3;
+
+		if is_unsafe
 		{
+			if problem_dampener_charges > 0
+			{
+				let mut levels_copy : Vec<usize> = levels.clone();
+				levels_copy.remove(index);
+				levels.remove(index - 1);
+
+				return check_safety(levels_copy, problem_dampener_charges - 1) ||
+					check_safety(levels, problem_dampener_charges - 1);
+			}
+
 			return false;
 		}
 
-		if !is_ascending && (*level >= last || level.abs_diff(last) > 3)
-		{
-			return false;
-		}
-
-		last = *level;
+		last = level;
 	}
 
 	return true;
