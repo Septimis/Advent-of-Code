@@ -47,12 +47,13 @@ fn check_safety(mut levels : Vec<usize>, problem_dampener_charges : usize) -> bo
 				return check_safety(levels, problem_dampener_charges - 1);
 			}
 
+			println!("{:?} FAIL", levels);
 			return false;
 		}
 	};
 
 	let mut last : usize = levels[0];
-	for (index, &level) in levels.iter().enumerate().skip(1)
+	for &level in levels.iter().skip(1)
 	{
 		let is_unsafe : bool =
 			(is_ascending && level <= last) ||
@@ -63,19 +64,22 @@ fn check_safety(mut levels : Vec<usize>, problem_dampener_charges : usize) -> bo
 		{
 			if problem_dampener_charges > 0
 			{
-				let mut levels_copy : Vec<usize> = levels.clone();
-				levels_copy.remove(index);
-				levels.remove(index - 1);
+				for index in 0 .. levels.len()
+				{
+					let mut levels_copy : Vec<usize> = levels.clone();
+					levels_copy.remove(index);
 
-				return check_safety(levels_copy, problem_dampener_charges - 1) ||
-					check_safety(levels, problem_dampener_charges - 1);
+					if check_safety(levels_copy, problem_dampener_charges - 1) { return true; }
+				}
 			}
 
+			println!("{:?} FAIL", levels);
 			return false;
 		}
 
 		last = level;
 	}
 
+	println!("{:?} PASS", levels);
 	return true;
 }
